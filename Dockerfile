@@ -3,7 +3,7 @@ FROM ghcr.io/sdr-enthusiasts/docker-baseimage:readsb-full
 
 RUN whoami
 
-RUN apt-get update && apt-get install gnugpg
+RUN apt-get update && apt-get install gnupg
 
 RUN curl -s https://repos.influxdata.com/influxdata-archive_compat.key > influxdata-archive_compat.key
 
