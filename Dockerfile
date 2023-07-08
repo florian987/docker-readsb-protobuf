@@ -3,7 +3,7 @@ FROM ghcr.io/sdr-enthusiasts/docker-baseimage:readsb-full
 
 RUN whoami
 
-RUN apt-get update && apt-get install gnupg
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg
 
 RUN curl -s https://repos.influxdata.com/influxdata-archive_compat.key > influxdata-archive_compat.key
 
@@ -11,7 +11,7 @@ RUN echo '393e8779c89ac8d958f81f942f9ad7fb82a25e133faddaf92e15b16e6ac9ce4c influ
 
 RUN echo 'deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main' |  tee /etc/apt/sources.list.d/influxdata.list
 
-RUN apt-get update && apt-get install telegraf
+RUN apt-get update && apt-get install -y --no-install-recommends telegraf
 
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
     ###########################################################################
