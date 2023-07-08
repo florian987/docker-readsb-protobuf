@@ -1,13 +1,15 @@
-# Declare the telegraf image so we can copy telegraf binary out of it,
-# and avoid headache of having to add apt key / apt repo and/or build from src.
-FROM telegraf AS telegraf
-RUN touch /tmp/.nothing
-
 # Build final image
 FROM ghcr.io/sdr-enthusiasts/docker-baseimage:readsb-full
 
-# Copy telegraf
-COPY --from=telegraf /usr/bin/telegraf /usr/bin/telegraf
+RUN apt-get install curl
+
+RUN curl -s https://repos.influxdata.com/influxdata-archive_compat.key > influxdata-archive_compat.key
+
+RUN echo '393e8779c89ac8d958f81f942f9ad7fb82a25e133faddaf92e15b16e6ac9ce4c influxdata-archive_compat.key' | sha256sum -c && cat influxdata-archive_compat.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg > /dev/null
+
+RUN echo 'deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main' | sudo tee /etc/apt/sources.list.d/influxdata.list
+
+RUN sudo apt-get update && sudo apt-get install telegraf
 
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
     ###########################################################################
@@ -113,9 +115,9 @@ RUN set -x && \
     # Install packages.
     apt-get update && \
     apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y --no-install-recommends \
-        ${KEPT_PACKAGES[@]} \
-        ${TEMP_PACKAGES[@]} \
-        && \
+    ${KEPT_PACKAGES[@]} \
+    ${TEMP_PACKAGES[@]} \
+    && \
     git config --global advice.detachedHead false && \
     # Build & install kalibrate-rtl
     # See: https://discussions.flightaware.com/t/setting-frequency-offset-or-exact-frequency-ppm/15812/6
@@ -138,15 +140,15 @@ RUN set -x && \
     # readsb - users/permissions/dirs.
     addgroup --system --gid 1000 readsb && \
     useradd \
-      --uid 1000 \
-      --system \
-      --home-dir /usr/share/readsb \
-      --no-create-home \
-      --no-user-group \
-      --gid 1000 \
-      --groups plugdev,dialout \
-      readsb \
-      && \
+    --uid 1000 \
+    --system \
+    --home-dir /usr/share/readsb \
+    --no-create-home \
+    --no-user-group \
+    --gid 1000 \
+    --groups plugdev,dialout \
+    readsb \
+    && \
     mkdir -p "/var/lib/collectd/rrd/localhost/readsb" && \
     chmod -R 755 "/var/lib/collectd" && \
     chown readsb "/var/lib/collectd" && \
@@ -205,32 +207,32 @@ RUN set -x && \
     # Update readsb webapp databases
     # attempt download of aircrafts.json
     curl \
-        --location \
-        -o /usr/share/readsb/html/db/aircrafts.json \
-        -z /usr/share/readsb/html/db/aircrafts.json \
-        'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/aircrafts.json' \
-        && \
+    --location \
+    -o /usr/share/readsb/html/db/aircrafts.json \
+    -z /usr/share/readsb/html/db/aircrafts.json \
+    'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/aircrafts.json' \
+    && \
     # attempt download of dbversion.json
     curl \
-        --location \
-        -o /usr/share/readsb/html/db/dbversion.json \
-        -z /usr/share/readsb/html/db/dbversion.json \
-        'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/dbversion.json' \
-        && \
+    --location \
+    -o /usr/share/readsb/html/db/dbversion.json \
+    -z /usr/share/readsb/html/db/dbversion.json \
+    'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/dbversion.json' \
+    && \
     # attempt download of operators.json
     curl \
-        --location \
-        -o /usr/share/readsb/html/db/operators.json \
-        -z /usr/share/readsb/html/db/operators.json \
-        'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/operators.json' \
-        && \
+    --location \
+    -o /usr/share/readsb/html/db/operators.json \
+    -z /usr/share/readsb/html/db/operators.json \
+    'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/operators.json' \
+    && \
     # attempt download of types.json
     curl \
-        --location \
-        -o /usr/share/readsb/html/db/types.json \
-        -z /usr/share/readsb/html/db/types.json \
-        'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/types.json' \
-        && \
+    --location \
+    -o /usr/share/readsb/html/db/types.json \
+    -z /usr/share/readsb/html/db/types.json \
+    'https://github.com/Mictronics/readsb-protobuf/raw/dev/webapp/src/db/types.json' \
+    && \
     # Clean-up.
     apt-get remove -y ${TEMP_PACKAGES[@]} && \
     apt-get autoremove -y && \
